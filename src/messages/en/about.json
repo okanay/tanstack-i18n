@@ -1,0 +1,7 @@
+{
+  "links": {
+    "index": "Go To Index Page",
+    "index_navigate": "Go To Index Page with Navigate"
+  },
+  "page_title": "About {{locale}}"
+}

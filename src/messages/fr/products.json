@@ -1,0 +1,50 @@
+{
+  "detail": {
+    "buy_now": "Acheter maintenant",
+    "title": "Produit {{slug}}"
+  },
+  "index_title": "Page d'index des produits",
+  "links": {
+    "index": "Aller à la page d'index",
+    "view_details": "Voir les détails"
+  },
+  "list": [
+    {
+      "desc": "Un essentiel quotidien confortable et polyvalent.",
+      "slug": "classic-t-shirt",
+      "title": "T-shirt classique"
+    },
+    {
+      "desc": "Un jean durable et élégant pour toutes les occasions.",
+      "slug": "denim-jeans",
+      "title": "Jean en denim"
+    },
+    {
+      "desc": "Un pull chaud et douillet avec une capuche classique.",
+      "slug": "hooded-sweatshirt",
+      "title": "Sweat à capuche"
+    },
+    {
+      "desc": "Une robe légère et aérienne, parfaite pour les journées chaudes.",
+      "slug": "summer-dress",
+      "title": "Robe d'été"
+    },
+    {
+      "desc": "Short respirant conçu pour une performance athlétique maximale.",
+      "slug": "running-shorts",
+      "title": "Short de course"
+    }
+  ],
+  "payment": {
+    "info": "Traitement sécurisé de la passerelle de paiement...",
+    "title": "Paiement du produit {{slug}}"
+  },
+  "search": {
+    "button": "Rechercher",
+    "placeholder": "Rechercher des produits...",
+    "title": "Page de recherche de produits"
+  },
+  "sections": {
+    "list": "Liste des produits"
+  }
+}

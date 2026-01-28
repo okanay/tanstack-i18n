@@ -1,0 +1,13 @@
+{
+  "accept_terms": "<termsLink>Hizmet Şartları</termsLink> ve <privacyLink>Gizlilik Politikası</ndağını</privacyLink> kabul ediyorum.",
+  "greeting": "Merhaba {{username}}",
+  "links": {
+    "about": "Hakkımızda Sayfasına Git",
+    "about_navigate": "Gezinme ile Hakkımızda Sayfasına Git",
+    "contact": "İletişim Sayfasına Git",
+    "products": "Ürünlere Git"
+  },
+  "sections": {
+    "pages": "Sayfalar"
+  }
+}

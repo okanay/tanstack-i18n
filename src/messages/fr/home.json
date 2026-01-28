@@ -1,0 +1,13 @@
+{
+  "accept_terms": "J'accepte les <termsLink>Conditions d'utilisation</termsLink> et la <privacyLink>Politique de confidentialité</privacyLink>.",
+  "greeting": "Bonjour {{username}}",
+  "links": {
+    "about": "Aller à la page À propos",
+    "about_navigate": "Aller à la page À propos avec navigation",
+    "contact": "Aller à la page Contact",
+    "products": "Aller aux produits"
+  },
+  "sections": {
+    "pages": "Pages"
+  }
+}

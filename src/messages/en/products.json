@@ -1,0 +1,50 @@
+{
+  "detail": {
+    "buy_now": "Buy Now",
+    "title": "Product {{slug}}"
+  },
+  "index_title": "Product Index Page",
+  "links": {
+    "index": "Go To Index Page",
+    "view_details": "View Details"
+  },
+  "list": [
+    {
+      "desc": "A comfortable and versatile everyday essential.",
+      "slug": "classic-t-shirt",
+      "title": "Classic T-Shirt"
+    },
+    {
+      "desc": "Durable and stylish jeans for any occasion.",
+      "slug": "denim-jeans",
+      "title": "Denim Jeans"
+    },
+    {
+      "desc": "Warm and cozy pullover with a classic hood.",
+      "slug": "hooded-sweatshirt",
+      "title": "Hooded Sweatshirt"
+    },
+    {
+      "desc": "Lightweight and airy dress perfect for warm weather.",
+      "slug": "summer-dress",
+      "title": "Summer Dress"
+    },
+    {
+      "desc": "Breathable shorts designed for maximum athletic performance.",
+      "slug": "running-shorts",
+      "title": "Running Shorts"
+    }
+  ],
+  "payment": {
+    "info": "Secure payment gateway processing...",
+    "title": "Product {{slug}} payment"
+  },
+  "search": {
+    "button": "Search",
+    "placeholder": "Search for products...",
+    "title": "Product Search Page"
+  },
+  "sections": {
+    "list": "Product List"
+  }
+}

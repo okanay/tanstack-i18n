@@ -1,0 +1,50 @@
+{
+  "detail": {
+    "buy_now": "Hemen Al",
+    "title": "Ürün {{slug}}"
+  },
+  "index_title": "Ürün Ana Sayfası",
+  "links": {
+    "index": "Ana Sayfaya Git",
+    "view_details": "Detayları Görüntüle"
+  },
+  "list": [
+    {
+      "desc": "Rahat ve çok yönlü günlük bir temel parça.",
+      "slug": "classic-t-shirt",
+      "title": "Klasik Tişört"
+    },
+    {
+      "desc": "Her durum için dayanıklı ve şık kot pantolon.",
+      "slug": "denim-jeans",
+      "title": "Kot Pantolon"
+    },
+    {
+      "desc": "Klasik kapüşonlu, sıcak ve rahat bir süveter.",
+      "slug": "hooded-sweatshirt",
+      "title": "Kapüşonlu Sweatshirt"
+    },
+    {
+      "desc": "Sıcak havalar için mükemmel, hafif ve havadar bir elbise.",
+      "slug": "summer-dress",
+      "title": "Yazlık Elbise"
+    },
+    {
+      "desc": "Maksimum atletik performans için tasarlanmış nefes alabilen şort.",
+      "slug": "running-shorts",
+      "title": "Koşu Şortu"
+    }
+  ],
+  "payment": {
+    "info": "Güvenli ödeme ağ geçidi işleniyor...",
+    "title": "Ürün {{slug}} ödemesi"
+  },
+  "search": {
+    "button": "Arama Yap",
+    "placeholder": "Ürün ara...",
+    "title": "Ürün Arama Sayfası"
+  },
+  "sections": {
+    "list": "Ürün Listesi"
+  }
+}

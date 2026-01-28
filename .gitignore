@@ -1,0 +1,66 @@
+.env
+.env.development.local
+.env.test.local
+.env.production.local
+.env.production
+.env.local
+wrangler.toml
+wrangler.jsonc
+
+.wrangler
+.cache
+node_modules
+
+# Local
+.DS_Store
+*.local
+*.log*
+
+certs/
+*.pem
+*.key
+*.crt
+
+.dev.vars
+
+# Dist
+dist/
+.vinxi/
+.output/
+.vercel/
+.netlify/
+.wrangler/
+.nitro/types/
+**/.git/
+**/.next/
+**/node_modules/
+**/.nitro/
+**/.output/
+**/.wrangler/
+**/tanstack/
+**/.tanstack/
+**/.DS_Store/
+**/bin/
+**/tmp/
+
+# IDE
+.vscode/*
+!.vscode/extensions.json
+.idea
+
+# output
+out
+*.tgz
+
+# code coverage
+coverage
+*.lcov
+
+# logs
+logs
+_.log
+report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
+
+# caches
+.eslintcache
+*.tsbuildinfo

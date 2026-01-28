@@ -1,0 +1,128 @@
+{
+  "about:links.index": {
+    "defaultValue": "Go To Index Page",
+    "hash": "c62da8db"
+  },
+  "about:links.index_navigate": {
+    "defaultValue": "Go To Index Page with Navigate",
+    "hash": "7b9325b3"
+  },
+  "about:page_title": {
+    "defaultValue": "About {{locale}}",
+    "hash": "b7fed76c"
+  },
+  "contact:links.index": {
+    "defaultValue": "Go To Index Page",
+    "hash": "c62da8db"
+  },
+  "contact:links.index_navigate": {
+    "defaultValue": "Go To Index Page with Navigate",
+    "hash": "7b9325b3"
+  },
+  "contact:page_title": {
+    "defaultValue": "Contact {{locale}}",
+    "hash": "fce03e1e"
+  },
+  "home:accept_terms": {
+    "defaultValue": "I accept the <termsLink>Terms of Service</termsLink> and <privacyLink>Privacy Policy</privacyLink>.",
+    "hash": "6488503a"
+  },
+  "home:greeting": {
+    "defaultValue": "Hello {{username}}",
+    "hash": "45f208d5"
+  },
+  "home:links.about": {
+    "defaultValue": "Go To About Page",
+    "hash": "a5bede11"
+  },
+  "home:links.about_navigate": {
+    "defaultValue": "Go To About Page with Navigate",
+    "hash": "53abb1ca"
+  },
+  "home:links.contact": {
+    "defaultValue": "Go To Contact Page",
+    "hash": "33a5cce8"
+  },
+  "home:links.products": {
+    "defaultValue": "Go To Products",
+    "hash": "ce8c56e9"
+  },
+  "home:sections.pages": {
+    "defaultValue": "Pages",
+    "hash": "59c086a1"
+  },
+  "products:detail.buy_now": {
+    "defaultValue": "Buy Now",
+    "hash": "23f05018"
+  },
+  "products:detail.title": {
+    "defaultValue": "Product {{slug}}",
+    "hash": "61692d96"
+  },
+  "products:index_title": {
+    "defaultValue": "Product Index Page",
+    "hash": "f7768b18"
+  },
+  "products:links.index": {
+    "defaultValue": "Go To Index Page",
+    "hash": "c62da8db"
+  },
+  "products:links.view_details": {
+    "defaultValue": "View Details",
+    "hash": "527ac725"
+  },
+  "products:list": {
+    "defaultValue": [
+      {
+        "desc": "A comfortable and versatile everyday essential.",
+        "slug": "classic-t-shirt",
+        "title": "Classic T-Shirt"
+      },
+      {
+        "desc": "Durable and stylish jeans for any occasion.",
+        "slug": "denim-jeans",
+        "title": "Denim Jeans"
+      },
+      {
+        "desc": "Warm and cozy pullover with a classic hood.",
+        "slug": "hooded-sweatshirt",
+        "title": "Hooded Sweatshirt"
+      },
+      {
+        "desc": "Lightweight and airy dress perfect for warm weather.",
+        "slug": "summer-dress",
+        "title": "Summer Dress"
+      },
+      {
+        "desc": "Breathable shorts designed for maximum athletic performance.",
+        "slug": "running-shorts",
+        "title": "Running Shorts"
+      }
+    ],
+    "hash": "1587b8dd"
+  },
+  "products:payment.info": {
+    "defaultValue": "Secure payment gateway processing...",
+    "hash": "3295d711"
+  },
+  "products:payment.title": {
+    "defaultValue": "Product {{slug}} payment",
+    "hash": "b5844cb0"
+  },
+  "products:search.button": {
+    "defaultValue": "Search",
+    "hash": "fd7710a8"
+  },
+  "products:search.placeholder": {
+    "defaultValue": "Search for products...",
+    "hash": "26da0482"
+  },
+  "products:search.title": {
+    "defaultValue": "Product Search Page",
+    "hash": "99ea3d0b"
+  },
+  "products:sections.list": {
+    "defaultValue": "Product List",
+    "hash": "16445389"
+  }
+}

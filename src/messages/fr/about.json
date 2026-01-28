@@ -1,0 +1,7 @@
+{
+  "links": {
+    "index": "Aller à la page d'index",
+    "index_navigate": "Accéder à la page d'index avec navigation"
+  },
+  "page_title": "À propos de {{locale}}"
+}
