@@ -70,13 +70,6 @@ This template uses TanStack Router's `rewrite` API to decouple **what users see*
 User visits: site.com/tr/hakkimizda
                     ↓
         ┌─────────────────────┐
-        │   INPUT REWRITE     │
-        │ /tr/hakkimizda      │
-        │       ↓             │
-        │ /tr/about           │
-        └─────────────────────┘
-                    ↓
-        ┌─────────────────────┐
         │   ROUTER MATCHES    │
         │ routes/{-$locale}/  │
         │     about.tsx       │
@@ -133,24 +126,36 @@ Visit `http://localhost:3000` to see the app.
 // src/i18n/config.ts
 export const SUPPORTED_LANGUAGES = [
   {
+    flag: 'united-kingdom',
     label: 'English',
     value: 'en',
     locale: 'en-US',
+    ogLocale: 'en_US',
     direction: 'ltr',
-    default: true,  // ← This language uses origin URLs
+    timepicker: '12H',
+    supportLocale: ['en-US', 'en-GB', 'en-CA', 'en-AU', 'en-IE', 'en-NZ', 'en-ZA', 'en'],
+    default: true,
   },
   {
+    flag: 'turkey',
     label: 'Türkçe',
     value: 'tr',
     locale: 'tr-TR',
+    ogLocale: 'tr_TR',
+    supportLocale: ['tr-TR', 'tr-CY', 'tr'],
     direction: 'ltr',
+    timepicker: '24H',
     default: false,
   },
   {
+    flag: 'france',
     label: 'Français',
     value: 'fr',
     locale: 'fr-FR',
+    ogLocale: 'fr_FR',
+    supportLocale: ['fr-FR', 'fr-BE', 'fr-CA', 'fr-CH', 'fr'],
     direction: 'ltr',
+    timepicker: '24H',
     default: false,
   },
 ] as const
@@ -166,23 +171,29 @@ export const LOCALIZED_ROUTES = {
     '/about': '/about',
     '/contact': '/contact',
     '/products': '/products',
+    '/products/search': '/products/search',
     '/products/$slug': '/products/$slug',
+    '/products/$slug/payment': '/products/$slug/payment',
   },
   tr: {
     '/': '/tr',
     '/about': '/hakkimizda',
     '/contact': '/iletisim',
     '/products': '/urunler',
+    '/products/search': '/urunler/arama',
     '/products/$slug': '/urunler/$slug',
+    '/products/$slug/payment': '/urunler/$slug/odeme',
   },
   fr: {
     '/': '/fr',
-    '/about': '/a-propos',
+    '/about': '/environ',
     '/contact': '/nous-contacter',
     '/products': '/produits',
+    '/products/search': '/produits/recherche',
     '/products/$slug': '/produits/$slug',
+    '/products/$slug/payment': '/produits/$slug/paiement',
   },
-} as const
+} as const satisfies Record<LanguageValue, Record<string, string>>
 ```
 
 Dynamic segments (`$slug`, `$id`, etc.) are automatically preserved during URL rewriting.
