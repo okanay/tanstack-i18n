@@ -6,7 +6,7 @@ import { LOCALIZED_ROUTES } from '@/i18n/data/routes'
 // ============================================================================
 
 /**
- * Localized URL → Internal URL (Router için)
+ * Localized URL → Internal URL (for Router)
  *
  * /fr/billets/paris → /fr/tickets/paris
  * /biletler/paris → /en/tickets/paris
@@ -22,10 +22,10 @@ export const deLocalizeUrl = (url: URL): URL => {
 }
 
 /**
- * Internal URL → Localized URL (Kullanıcıya gösterilecek)
+ * Internal URL → Localized URL (to be shown to the user)
  *
  * /fr/tickets/paris → /fr/billets/paris
- * /tickets/paris → /tickets/paris (default dil)
+ * /tickets/paris → /tickets/paris (default language)
  */
 export const localizeUrl = (url: URL): URL => {
   const { lang, path } = parseUrl(url.pathname)
@@ -40,7 +40,7 @@ export const localizeUrl = (url: URL): URL => {
 }
 
 /**
- * Dil değiştirme için yeni URL oluştur
+ * Build a new URL for language switching
  *
  * currentUrl: "/tr/biletler/paris?q=test#section"
  * newLang: "fr"
@@ -62,7 +62,7 @@ export const buildLanguageSwitchUrl = (
 }
 
 /**
- * URL'i parse et
+ * Parse the URL
  *
  * "/fr/billets/paris" → { lang: "fr", path: "/billets/paris" }
  * "/about" → { lang: "en", path: "/about" }
@@ -118,14 +118,14 @@ export const toLocalized = (internalPath: string, lang: LanguageValue): string |
 // URL BUILDERS
 // ============================================================================
 
-/** Internal URL'e dil prefix'i ekle */
+/** Add language prefix to internal URL */
 const buildInternalUrl = (internalPath: string, lang: LanguageValue): string => {
   if (lang === DEFAULT_LANGUAGE.value) return internalPath
   if (internalPath === '/') return `/${lang}`
   return `/${lang}${internalPath}`
 }
 
-/** Localized URL'e dil prefix'i ekle */
+/** Add language prefix to localized URL */
 const buildLocalizedUrl = (localizedPath: string, lang: LanguageValue): string => {
   if (lang === DEFAULT_LANGUAGE.value) return localizedPath
   if (localizedPath === '/') return `/${lang}`
@@ -137,7 +137,7 @@ const buildLocalizedUrl = (localizedPath: string, lang: LanguageValue): string =
 // ============================================================================
 
 /**
- * Path'i pattern ile eşleştir
+ * Match path with pattern
  *
  * path: "/billets/paris/vip"
  * pattern: "/billets/$slug/$"
@@ -171,7 +171,7 @@ const matchPattern = (path: string, pattern: string): Record<string, string> | n
 }
 
 /**
- * Pattern'i params ile doldur
+ * Fill pattern with params
  *
  * pattern: "/tickets/$slug/$"
  * params: { slug: "paris", _splat: "vip" }
@@ -187,7 +187,7 @@ const fillPattern = (pattern: string, params: Record<string, string>): string =>
   return toPath(filled.filter(Boolean))
 }
 
-/** Pattern'leri öncelik sırasına göre sırala (static > param > splat) */
+/** Sort patterns by priority (static > param > splat) */
 const getSortedPatterns = (lang: LanguageValue): [string, string][] => {
   const map = LOCALIZED_ROUTES[lang]
   if (!map) return []
@@ -207,13 +207,13 @@ const toSegments = (path: string): string[] => path.split('/').filter(Boolean)
 /** ["fr", "billets", "paris"] → "/fr/billets/paris" */
 const toPath = (segments: string[]): string => '/' + segments.join('/')
 
-/** Segment dil kodu mu? */
+/** Is segment a language code? */
 const isLangSegment = (segment: string): segment is LanguageValue => LANGUAGES_VALUES.includes(segment as LanguageValue)
 
-/** Dynamic param mi? ($slug) */
+/** Is it a dynamic param? ($slug) */
 const isParam = (seg: string): boolean => seg.startsWith('$') && seg !== '$'
 
-/** Splat mi? ($) */
+/** Is it a splat? ($) */
 const isSplat = (seg: string): boolean => seg === '$'
 
 // ============================================================================

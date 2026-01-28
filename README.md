@@ -16,82 +16,144 @@ With standard file-based routing, your default language **cannot use the origin 
 
 ```
 ❌ Standard Approach (Origin URL Wasted)
-├── site.com/en          ← English home (origin unusable)
-├── site.com/en/about    ← English about
-├── site.com/tr          ← Turkish home
-└── site.com/tr/hakkinda ← Turkish about
 
-What about site.com/ ? → Returns 404 or requires redirect
+site.com/         → 404 or redirect (unusable!)
+site.com/en       → English home
+site.com/en/about → English about
+site.com/tr       → Turkish home
+site.com/tr/about → Turkish about
 ```
 
-This wastes your most valuable URL (`site.com/`) and creates unnecessary redirects that hurt SEO.
+Your most valuable URL (`site.com/`) goes to waste. Users hitting the root get a 404 or an unnecessary redirect.
 
-### What You Actually Want
-
-```
-✅ This Template's Approach (Origin URL Used)
-├── site.com/            ← English home (origin utilized!)
-├── site.com/about       ← English about
-├── site.com/tr          ← Turkish home
-└── site.com/tr/hakkinda ← Turkish about
-```
-
-The default language (English) uses clean origin URLs while other languages get prefixed paths. **No wasted URLs, no redirects, perfect SEO.**
-
-### The Localized URL Problem
-
-Even if you solve the origin issue, you still face another challenge: **localized slugs**.
-
-For proper international SEO, URLs should be translated:
+**This template solves it:**
 
 ```
-❌ Same slugs for all languages (Bad for SEO)
-├── site.com/about
-├── site.com/tr/about      ← "about" means nothing in Turkish
-└── site.com/fr/about      ← "about" means nothing in French
+✅ This Template (Origin URL Utilized)
 
-✅ Localized slugs (Good for SEO)
-├── site.com/about
-├── site.com/tr/hakkimizda ← "hakkımızda" = "about us" in Turkish
-└── site.com/fr/a-propos   ← "à propos" = "about" in French
+site.com/            → English home (origin works!)
+site.com/about       → English about
+site.com/tr          → Turkish home
+site.com/tr/hakkinda → Turkish about
 ```
 
-But localized slugs create a new problem: **How do you maintain one codebase when URLs are different per language?**
+The default language uses clean origin URLs. Other languages get prefixed paths. No wasted URLs, no redirects.
+
+### The Localized Slug Problem
+
+For proper international SEO, URLs should be translated too:
+
+```
+❌ Same Slugs (Bad for SEO)
+
+site.com/about       → English
+site.com/tr/about    → Turkish (but "about" means nothing in Turkish!)
+site.com/fr/about    → French (same problem)
+
+✅ Localized Slugs (Good for SEO)
+
+site.com/about       → English
+site.com/tr/hakkimizda → Turkish ("hakkımızda" = "about us")
+site.com/fr/a-propos   → French ("à propos" = "about")
+```
+
+But this creates a maintenance nightmare: Do you create separate route files for each language? How do you keep them in sync?
+
+### The Link & Navigate Problem
+
+Most i18n solutions require custom wrapper components:
+
+```tsx
+❌ Typical i18n Solutions
+
+// Custom wrapper required
+<LocalizedLink to="/about">About</LocalizedLink>
+
+// Or manual path building
+<Link to={`/${currentLang}/about`}>About</Link>
+
+// Or helper functions everywhere
+<Link to={getLocalizedPath('/about', lang)}>About</Link>
+navigate(buildLocalizedUrl('/products', lang))
+```
+
+This pollutes your codebase. Every link, every navigation call needs special handling.
+
+**This template solves it:**
+
+```tsx
+✅ This Template (Standard Components Work)
+
+// Just use normal Link - rewriting handles the rest
+<Link to="/{-$locale}/about">About</Link>
+
+// Normal navigate - no wrappers needed
+navigate({ to: '/{-$locale}/about' })
+
+// Dynamic params work too
+<Link to="/{-$locale}/products/$slug" params={{ slug: 'blue-shirt' }}>
+  View Product
+</Link>
+```
+
+The URL rewrite system intercepts all navigation automatically. Your code stays clean.
 
 ---
 
 ## The Solution: URL Rewriting
 
-This template uses TanStack Router's `rewrite` API to decouple **what users see** from **what your code handles**.
+TanStack Router's `rewrite` API decouples **what users see** from **what your code handles**.
 
-### How It Works
+### The Core Concept
+
+URL Rewriting works in two directions:
+
+| Direction | When | What it does |
+|-----------|------|--------------|
+| **Input** | User visits a URL | Converts localized URL → internal route |
+| **Output** | App renders a link | Converts internal route → localized URL |
+
+### Example Flow
+
+**User visits `site.com/tr/hakkimizda`:**
 
 ```
-User visits: site.com/tr/hakkimizda
-                    ↓
-        ┌─────────────────────┐
-        │   ROUTER MATCHES    │
-        │ routes/{-$locale}/  │
-        │     about.tsx       │
-        └─────────────────────┘
-                    ↓
-        ┌─────────────────────┐
-        │   OUTPUT REWRITE    │
-        │ /tr/about           │
-        │       ↓             │
-        │ /tr/hakkimizda      │
-        └─────────────────────┘
-                    ↓
-Browser displays: site.com/tr/hakkimizda
+STEP 1: Input Rewrite
+─────────────────────
+Browser URL:     /tr/hakkimizda
+                      ↓
+Parse:           lang="tr", path="/hakkimizda"
+                      ↓
+Lookup:          /hakkimizda → /about (from routes.ts)
+                      ↓
+Internal URL:    /tr/about
+
+
+STEP 2: Router Matches
+─────────────────────
+Internal URL:    /tr/about
+                      ↓
+Matches:         routes/{-$locale}/about.tsx
+                      ↓
+Renders:         AboutPage component
+
+
+STEP 3: Output Rewrite
+─────────────────────
+Any <Link to="/{-$locale}/about"> in the page
+                      ↓
+Lookup:          /about → /hakkimizda (for Turkish)
+                      ↓
+Rendered HTML:   <a href="/tr/hakkimizda">
 ```
 
-**One route file (`about.tsx`) serves all languages.** No duplication.
+**Result:** User sees `/tr/hakkimizda` in the browser. Your code only knows `/about`. One route file serves all languages.
 
-### Direct URL Access
+### Direct URL Access Works
 
-When someone bookmarks `site.com/tr/hakkimizda` or shares it on social media, it works immediately:
+When someone bookmarks `/tr/hakkimizda` or shares it on social media:
 
-- ✅ No redirects
+- ✅ No redirects needed
 - ✅ No 404 errors
 - ✅ No flash of wrong content
 - ✅ Correct language loads instantly
@@ -100,13 +162,6 @@ When someone bookmarks `site.com/tr/hakkimizda` or shares it on social media, it
 
 ## Quick Start
 
-### Prerequisites
-
-- [Bun](https://bun.sh) v1.0+ (package manager and script runtime)
-- Node.js 18+ (for Vite compatibility)
-
-### Installation
-
 ```bash
 git clone https://github.com/okanay/tanstack-start-i18n.git
 cd tanstack-start-i18n
@@ -114,49 +169,37 @@ bun install
 bun run dev
 ```
 
-Visit `http://localhost:3000` to see the app.
+Visit `http://localhost:3000`
 
 ---
 
 ## Configuration
 
-### 1. Define Your Languages
+### 1. Define Languages
 
 ```typescript
 // src/i18n/config.ts
 export const SUPPORTED_LANGUAGES = [
   {
-    flag: 'united-kingdom',
     label: 'English',
     value: 'en',
     locale: 'en-US',
-    ogLocale: 'en_US',
     direction: 'ltr',
-    timepicker: '12H',
-    supportLocale: ['en-US', 'en-GB', 'en-CA', 'en-AU', 'en-IE', 'en-NZ', 'en-ZA', 'en'],
-    default: true,
+    default: true,  // ← Uses origin URLs (no prefix)
   },
   {
-    flag: 'turkey',
     label: 'Türkçe',
     value: 'tr',
     locale: 'tr-TR',
-    ogLocale: 'tr_TR',
-    supportLocale: ['tr-TR', 'tr-CY', 'tr'],
     direction: 'ltr',
-    timepicker: '24H',
-    default: false,
+    default: false, // ← Uses /tr prefix
   },
   {
-    flag: 'france',
     label: 'Français',
     value: 'fr',
     locale: 'fr-FR',
-    ogLocale: 'fr_FR',
-    supportLocale: ['fr-FR', 'fr-BE', 'fr-CA', 'fr-CH', 'fr'],
     direction: 'ltr',
-    timepicker: '24H',
-    default: false,
+    default: false, // ← Uses /fr prefix
   },
 ] as const
 ```
@@ -171,7 +214,6 @@ export const LOCALIZED_ROUTES = {
     '/about': '/about',
     '/contact': '/contact',
     '/products': '/products',
-    '/products/search': '/products/search',
     '/products/$slug': '/products/$slug',
     '/products/$slug/payment': '/products/$slug/payment',
   },
@@ -180,23 +222,21 @@ export const LOCALIZED_ROUTES = {
     '/about': '/hakkimizda',
     '/contact': '/iletisim',
     '/products': '/urunler',
-    '/products/search': '/urunler/arama',
     '/products/$slug': '/urunler/$slug',
     '/products/$slug/payment': '/urunler/$slug/odeme',
   },
   fr: {
     '/': '/fr',
-    '/about': '/environ',
+    '/about': '/a-propos',
     '/contact': '/nous-contacter',
     '/products': '/produits',
-    '/products/search': '/produits/recherche',
     '/products/$slug': '/produits/$slug',
     '/products/$slug/payment': '/produits/$slug/paiement',
   },
-} as const satisfies Record<LanguageValue, Record<string, string>>
+} as const
 ```
 
-Dynamic segments (`$slug`, `$id`, etc.) are automatically preserved during URL rewriting.
+Dynamic segments (`$slug`, `$id`) are preserved automatically during rewriting.
 
 ### 3. Define SEO Metadata
 
@@ -207,24 +247,24 @@ export const SEO = {
     '/': {
       title: 'Home | My Site',
       description: 'Welcome to our website.',
-      og: { title: 'My Site', description: 'Welcome to our website' },
+      og: { title: 'My Site', description: 'Welcome' },
     },
     '/about': {
       title: 'About Us | My Site',
       description: 'Learn more about our company.',
-      og: { title: 'About Us', description: 'Learn about our company' },
+      og: { title: 'About Us', description: 'Our story' },
     },
   },
   tr: {
     '/': {
       title: 'Ana Sayfa | Sitem',
       description: 'Web sitemize hoş geldiniz.',
-      og: { title: 'Sitem', description: 'Web sitemize hoş geldiniz' },
+      og: { title: 'Sitem', description: 'Hoş geldiniz' },
     },
     '/about': {
       title: 'Hakkımızda | Sitem',
-      description: 'Şirketimiz hakkında bilgi edinin.',
-      og: { title: 'Hakkımızda', description: 'Şirketimiz hakkında' },
+      description: 'Şirketimiz hakkında.',
+      og: { title: 'Hakkımızda', description: 'Hikayemiz' },
     },
   },
   // ... fr
@@ -233,103 +273,70 @@ export const SEO = {
 
 ---
 
-## SEO Features
+## Navigation
 
-### Automatic Canonical & Hreflang Tags
-
-Every page automatically generates proper SEO tags:
-
-```typescript
-// In any route file
-export const Route = createFileRoute('/{-$locale}/about')({
-  head: ({ params }) => ({
-    meta: getSeoMetadata('/about', params.locale),
-    links: getCanonicalLinks('/about', params.locale),
-  }),
-  component: AboutPage,
-})
-```
-
-**Generated HTML output:**
-
-```html
-<!-- Canonical -->
-<link rel="canonical" href="https://site.com/tr/hakkimizda" />
-
-<!-- Hreflang alternatives -->
-<link rel="alternate" hreflang="en" href="https://site.com/about" />
-<link rel="alternate" hreflang="tr" href="https://site.com/tr/hakkimizda" />
-<link rel="alternate" hreflang="fr" href="https://site.com/fr/a-propos" />
-<link rel="alternate" hreflang="x-default" href="https://site.com/about" />
-```
-
-### Dynamic Sitemap Generation
-
-The template includes a dynamic `sitemap.xml` route that automatically generates entries for all pages in all languages:
-
-```xml
-<!-- GET /sitemap.xml -->
-<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url>
-    <loc>https://site.com/</loc>
-    <lastmod>2025-01-28</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>1.0</priority>
-  </url>
-  <url>
-    <loc>https://site.com/tr</loc>
-    <lastmod>2025-01-28</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>1.0</priority>
-  </url>
-  <!-- ... all routes × all languages -->
-</urlset>
-```
-
----
-
-## Using Translations
-
-This template uses `react-i18next` for translations:
+### Using Link
 
 ```tsx
-// src/routes/{-$locale}/about.tsx
-import { useTranslation } from 'react-i18next'
+import { Link } from '@tanstack/react-router'
 
-function AboutPage() {
-  const { t } = useTranslation(['about'])
+// Basic link - rewriting handles localization
+<Link to="/{-$locale}/about">About Us</Link>
 
-  return (
-    <div>
-      <h1>{t('about:page_title', { defaultValue: 'About Us' })}</h1>
-      <p>{t('about:description', { defaultValue: 'Learn more about our company.' })}</p>
-    </div>
-  )
+// With dynamic params
+<Link
+  to="/{-$locale}/products/$slug"
+  params={{ slug: 'blue-shirt' }}
+>
+  View Product
+</Link>
+
+// With search params
+<Link
+  to="/{-$locale}/products"
+  search={{ category: 'shirts', sort: 'price' }}
+>
+  Shirts
+</Link>
+```
+
+**What users see:**
+
+| Current Language | Link Output |
+|------------------|-------------|
+| English | `/about`, `/products/blue-shirt` |
+| Turkish | `/tr/hakkimizda`, `/tr/urunler/blue-shirt` |
+| French | `/fr/a-propos`, `/fr/produits/blue-shirt` |
+
+### Using Navigate
+
+```tsx
+import { useNavigate } from '@tanstack/react-router'
+
+function MyComponent() {
+  const navigate = useNavigate()
+
+  const goToAbout = () => {
+    navigate({ to: '/{-$locale}/about' })
+  }
+
+  const goToProduct = (slug: string) => {
+    navigate({
+      to: '/{-$locale}/products/$slug',
+      params: { slug }
+    })
+  }
+
+  const goToProductsWithFilter = () => {
+    navigate({
+      to: '/{-$locale}/products',
+      search: { category: 'shirts' }
+    })
+  }
 }
 ```
 
-Translation files are located in `src/messages/{lang}/`:
-
-```
-src/messages/
-├── en/
-│   ├── about.json
-│   ├── home.json
-│   └── index.ts
-├── tr/
-│   ├── about.json
-│   ├── home.json
-│   └── index.ts
-└── fr/
-    └── ...
-```
-
----
-
-## Language Switching
-
-The template includes a ready-to-use language switcher:
+### Language Switching
 
 ```tsx
 import { useLanguage } from '@/i18n/provider'
@@ -347,12 +354,113 @@ function LanguageSwitcher() {
 }
 ```
 
-When switching languages, the URL is automatically rewritten:
+When switching, the URL transforms automatically:
 
 ```
-Current: site.com/tr/hakkimizda
-Click "English"
-Result:  site.com/about  ← Same page, different language, correct URL
+Current:  /tr/urunler/blue-shirt
+Switch to English
+Result:   /products/blue-shirt
+```
+
+---
+
+## SEO Features
+
+### Automatic Canonical & Hreflang
+
+Every route automatically generates proper SEO tags:
+
+```typescript
+// src/routes/{-$locale}/about.tsx
+export const Route = createFileRoute('/{-$locale}/about')({
+  head: ({ params }) => ({
+    meta: getSeoMetadata('/about', params.locale),
+    links: getCanonicalLinks('/about', params.locale),
+  }),
+  component: AboutPage,
+})
+```
+
+**Generated HTML:**
+
+```html
+<!-- Canonical (current page) -->
+<link rel="canonical" href="https://site.com/tr/hakkimizda" />
+
+<!-- Language alternatives -->
+<link rel="alternate" hreflang="en" href="https://site.com/about" />
+<link rel="alternate" hreflang="tr" href="https://site.com/tr/hakkimizda" />
+<link rel="alternate" hreflang="fr" href="https://site.com/fr/a-propos" />
+<link rel="alternate" hreflang="x-default" href="https://site.com/about" />
+```
+
+### Dynamic Sitemap
+
+Server-rendered sitemap at `/sitemap.xml`:
+
+```typescript
+// src/routes/sitemap[.]xml.ts
+export const Route = createFileRoute('/sitemap.xml')({
+  server: {
+    handlers: {
+      GET: async () => {
+        const entries = [
+          // All localized URLs
+          { loc: `${BASE_URL}/`, priority: 1.0 },
+          { loc: `${BASE_URL}/tr`, priority: 1.0 },
+          { loc: `${BASE_URL}/about`, priority: 0.8 },
+          { loc: `${BASE_URL}/tr/hakkimizda`, priority: 0.8 },
+          // ...
+        ]
+
+        return new Response(generateSitemapXml(entries), {
+          headers: { 'Content-Type': 'application/xml' },
+        })
+      },
+    },
+  },
+})
+```
+
+The sitemap uses **localized URLs** (what search engines should index).
+
+---
+
+## Using Translations
+
+```tsx
+import { useTranslation } from 'react-i18next'
+
+function AboutPage() {
+  const { t } = useTranslation(['about'])
+
+  return (
+    <div>
+      <h1>{t('about:page_title', { defaultValue: 'About Us' })}</h1>
+
+      {/* With interpolation */}
+      <p>{t('about:greeting', {
+        defaultValue: 'Hello {{name}}',
+        name: 'John'
+      })}</p>
+    </div>
+  )
+}
+```
+
+Translation files in `src/messages/{lang}/`:
+
+```
+src/messages/
+├── en/
+│   ├── about.json    {"page_title": "About Us", ...}
+│   ├── home.json
+│   └── index.ts
+├── tr/
+│   ├── about.json    {"page_title": "Hakkımızda", ...}
+│   └── ...
+└── fr/
+    └── ...
 ```
 
 ---
@@ -364,10 +472,12 @@ Result:  site.com/about  ← Same page, different language, correct URL
 │   ├── i18n/
 │   │   ├── config.ts        # Language definitions
 │   │   ├── rewrite.ts       # URL rewriting logic
-│   │   ├── provider.tsx     # React context
+│   │   ├── provider.tsx     # React context & hooks
+│   │   ├── instance.ts      # i18next setup
+│   │   ├── loader.ts        # Dynamic resource loading
 │   │   ├── data/
 │   │   │   ├── routes.ts    # Localized URL mappings
-│   │   │   └── seo.ts       # SEO metadata per route
+│   │   │   └── seo.ts       # Per-route SEO metadata
 │   │   └── utils/
 │   │       ├── canonical.ts # Canonical/hreflang generator
 │   │       └── seo.ts       # Meta tag utilities
@@ -378,17 +488,23 @@ Result:  site.com/about  ← Same page, different language, correct URL
 │   │   └── fr/
 │   │
 │   ├── routes/
-│   │   ├── __root.tsx       # Root layout with i18n
+│   │   ├── __root.tsx       # Root layout (i18n init)
 │   │   ├── sitemap[.]xml.ts # Dynamic sitemap
 │   │   └── {-$locale}/      # All localized routes
-│   │       ├── route.tsx    # Locale validation
-│   │       ├── index.tsx
-│   │       ├── about.tsx
-│   │       └── ...
+│   │       ├── route.tsx    # Locale validation layout
+│   │       ├── index.tsx    # Home page
+│   │       ├── about.tsx    # About page
+│   │       ├── contact.tsx  # Contact page
+│   │       └── products.*.tsx
 │   │
-│   └── router.tsx           # Router with rewrite config
+│   └── router.tsx           # Router config with rewrite
 │
-└── i18n/                    # [Bonus] Extraction scripts
+├── i18n/                    # [Bonus] Extraction tool
+│   ├── extract.ts
+│   ├── clean.ts
+│   └── status.ts
+│
+└── vite.config.ts
 ```
 
 ---
@@ -403,13 +519,13 @@ bun run deploy
 
 ### Other Platforms
 
-Modify `vite.config.ts` to use a different adapter:
+Swap the adapter in `vite.config.ts`:
 
 ```typescript
-// For Vercel
+// Vercel
 import { vercel } from '@tanstack/react-start/adapters/vercel'
 
-// For Node.js
+// Node.js
 import { node } from '@tanstack/react-start/adapters/node'
 ```
 
@@ -417,54 +533,55 @@ import { node } from '@tanstack/react-start/adapters/node'
 
 ## Bonus: Code-First Translation Extraction
 
-This template includes an optional AST-based extraction tool that scans your code and generates translation JSON files automatically.
+This template includes an optional AST-based tool that generates translation JSON files from your code.
 
-Instead of manually maintaining JSON files, you write translations inline:
+Instead of manually editing JSON:
 
 ```tsx
+// Write this in your component
 t('home:welcome', { defaultValue: 'Welcome, {{name}}!', name: user.name })
 ```
 
-Then run:
+Run extraction:
 
 ```bash
 bun run i18n:extract
 ```
 
-The tool scans all `.tsx` files, extracts keys with `defaultValue`, and generates/updates `messages/en/*.json` automatically.
+The tool scans your codebase and generates `messages/en/home.json` automatically.
 
-### Available Scripts
+### Scripts
 
-| Script | Description |
-|--------|-------------|
-| `bun run i18n:extract` | Extract keys from code → JSON |
-| `bun run i18n:clean` | Remove unused keys from JSON |
-| `bun run i18n:status` | Show translation progress |
+| Command | Description |
+|---------|-------------|
+| `bun run i18n:extract` | Extract keys from code → generate JSON |
+| `bun run i18n:clean` | Remove unused keys from JSON files |
+| `bun run i18n:status` | Show translation progress per language |
 
-### Vite Dev Shortcuts
+### Dev Server Shortcuts
 
-During development, press these keys in the terminal:
+Press these keys in terminal during `bun run dev`:
 
 | Key | Action |
 |-----|--------|
 | `t` | Extract translations |
-| `s` | Show translation status |
+| `s` | Show status |
 | `x` | Clean unused keys |
 
-**Note:** This extraction system is completely optional. You can manually manage your JSON files if you prefer.
+This tool is **completely optional**. You can manually manage JSON files if preferred.
 
 ---
 
 ## Tech Stack
 
 - **React 19** with React Compiler
-- **TanStack Start** for full-stack React
-- **TanStack Router** with type-safe file routing
-- **TanStack Query** for server state
-- **react-i18next** for translations
-- **Tailwind CSS v4** with Vite plugin
-- **Bun** as package manager
-- **Cloudflare Workers** for edge deployment
+- **TanStack Start** - Full-stack React framework
+- **TanStack Router** - Type-safe routing with URL rewriting
+- **TanStack Query** - Server state management
+- **react-i18next** - Translation runtime
+- **Tailwind CSS v4** - Styling
+- **Bun** - Package manager & runtime
+- **Cloudflare Workers** - Edge deployment
 
 ---
 
