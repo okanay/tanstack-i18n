@@ -509,28 +509,6 @@ src/messages/
 
 ---
 
-## Deployment
-
-### Cloudflare Workers (Default)
-
-```bash
-bun run deploy
-```
-
-### Other Platforms
-
-Swap the adapter in `vite.config.ts`:
-
-```typescript
-// Vercel
-import { vercel } from '@tanstack/react-start/adapters/vercel'
-
-// Node.js
-import { node } from '@tanstack/react-start/adapters/node'
-```
-
----
-
 ## Bonus: Code-First Translation Extraction
 
 This template includes an optional AST-based tool that generates translation JSON files from your code.
