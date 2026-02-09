@@ -1,130 +1,472 @@
-# Advanced Pluralization + Context Example
+# Zod Validation with React Hook Form
 
-This example demonstrates the most complex scenario: combining pluralization with context (e.g., gender + count).
+This example demonstrates how to create type-safe Zod schemas with i18next translations using the factory pattern.
 
-## Social Relationship Status
+## Schema Factory Pattern
 ```typescript
-import { useTranslation } from 'react-i18next'
+import { z } from 'zod'
+import type { TFunction } from 'i18next'
 
-type Gender = 'male' | 'female' | 'non_binary'
+/**
+ * Contact Form Schema Factory
+ *
+ * We wrap the schema in a function that accepts the `t` function.
+ * This allows us to use translations for validation error messages.
+ *
+ * ⚠️ DO NOT use useMemo - React Compiler handles optimization.
+ */
+export const createContactSchema = (t: TFunction<'validation'>) => {
+  return z.object({
+    email: z
+      .string()
+      .min(1, {
+        message: t('validation:field_required', {
+          defaultValue: 'This field is required.',
+        }),
+      })
+      .email({
+        message: t('validation:email_invalid', {
+          defaultValue: 'Please enter a valid email address.',
+        }),
+      }),
 
-interface RelationshipProps {
-  count: number
-  gender: Gender
+    message: z
+      .string()
+      .min(10, {
+        message: t('validation:message_min', {
+          defaultValue: 'Message must be at least {{count}} characters.',
+          count: 10,
+        }),
+      })
+      .max(500, {
+        message: t('validation:message_max', {
+          defaultValue: 'Message cannot exceed {{count}} characters.',
+          count: 500,
+        }),
+      }),
+  })
 }
 
-export function SocialStatus({ count, gender }: RelationshipProps) {
-  const { t } = useTranslation(['social'])
+// Extract the TypeScript type from the schema
+export type ContactFormValues = z.infer<ReturnType<typeof createContactSchema>>
+```
 
-  /**
-   * AGGRESSIVE PLURALIZATION + CONTEXT EXAMPLE
-   *
-   * Here we are using i18next's resolution logic:
-   * 1. key_context_plural (e.g., relationship_male_other)
-   * 2. key_context (e.g., relationship_male)
-   * 3. key_plural (e.g., relationship_other)
-   * 4. key (e.g., relationship)
-   *
-   * Our AST tool appends everything after 'defaultValue_' (suffix)
-   * to the key when writing to JSON.
-   */
-  const statusText = t('social:relationship', {
-    count,
-    context: gender, // 'male', 'female', 'non_binary'
+## Complex Schema Example
+```typescript
+import { z } from 'zod'
+import type { TFunction } from 'i18next'
 
-    // 1. FALLBACK (Neutral / Undefined Gender)
-    defaultValue: 'Just a friend',               // count === 1 && context === 'non_binary' (or unmatched)
-    defaultValue_other: '{{count}} friends',     // count > 1  && context === 'non_binary'
+/**
+ * User Registration Schema with Complex Validations
+ */
+export const createRegistrationSchema = (t: TFunction<'validation'>) => {
+  return z
+    .object({
+      username: z
+        .string()
+        .min(3, {
+          message: t('validation:username_min', {
+            defaultValue: 'Username must be at least {{count}} characters.',
+            count: 3,
+          }),
+        })
+        .max(20, {
+          message: t('validation:username_max', {
+            defaultValue: 'Username cannot exceed {{count}} characters.',
+            count: 20,
+          }),
+        })
+        .regex(/^[a-zA-Z0-9_]+$/, {
+          message: t('validation:username_format', {
+            defaultValue: 'Username can only contain letters, numbers, and underscores.',
+          }),
+        }),
 
-    // 2. MALE (Male Context)
-    defaultValue_male: 'He is a boyfriend',             // count === 1 && context === 'male'
-    defaultValue_male_other: '{{count}} boyfriends',    // count > 1  && context === 'male'
+      email: z
+        .string()
+        .min(1, {
+          message: t('validation:field_required', {
+            defaultValue: 'This field is required.',
+          }),
+        })
+        .email({
+          message: t('validation:email_invalid', {
+            defaultValue: 'Please enter a valid email address.',
+          }),
+        }),
 
-    // 3. FEMALE (Female Context)
-    defaultValue_female: 'She is a girlfriend',           // count === 1 && context === 'female'
-    defaultValue_female_other: '{{count}} girlfriends',   // count > 1  && context === 'female'
+      password: z
+        .string()
+        .min(8, {
+          message: t('validation:password_min', {
+            defaultValue: 'Password must be at least {{count}} characters.',
+            count: 8,
+          }),
+        })
+        .regex(/[A-Z]/, {
+          message: t('validation:password_uppercase', {
+            defaultValue: 'Password must contain at least one uppercase letter.',
+          }),
+        })
+        .regex(/[a-z]/, {
+          message: t('validation:password_lowercase', {
+            defaultValue: 'Password must contain at least one lowercase letter.',
+          }),
+        })
+        .regex(/[0-9]/, {
+          message: t('validation:password_number', {
+            defaultValue: 'Password must contain at least one number.',
+          }),
+        }),
+
+      confirmPassword: z.string(),
+
+      age: z
+        .number({
+          invalid_type_error: t('validation:age_invalid', {
+            defaultValue: 'Age must be a number.',
+          }),
+        })
+        .min(18, {
+          message: t('validation:age_min', {
+            defaultValue: 'You must be at least {{count}} years old.',
+            count: 18,
+          }),
+        })
+        .max(120, {
+          message: t('validation:age_max', {
+            defaultValue: 'Please enter a valid age.',
+          }),
+        }),
+
+      terms: z.boolean().refine((val) => val === true, {
+        message: t('validation:terms_required', {
+          defaultValue: 'You must accept the terms and conditions.',
+        }),
+      }),
+    })
+    .refine((data) => data.password === data.confirmPassword, {
+      message: t('validation:password_mismatch', {
+        defaultValue: 'Passwords do not match.',
+      }),
+      path: ['confirmPassword'], // Error will be shown on confirmPassword field
+    })
+}
+
+export type RegistrationFormValues = z.infer<ReturnType<typeof createRegistrationSchema>>
+```
+
+## Usage in Component
+```tsx
+import { useTranslation } from 'react-i18next'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { createContactSchema, type ContactFormValues } from './schemas/contact'
+
+export function ContactForm() {
+  // Load the 'validation' and 'common' namespaces
+  const { t } = useTranslation(['validation', 'common'])
+
+  // Create schema - React Compiler handles optimization
+  const schema = createContactSchema(t)
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm<ContactFormValues>({
+    resolver: zodResolver(schema),
   })
 
+  const onSubmit = async (data: ContactFormValues) => {
+    try {
+      // API call here
+      console.log('Form data:', data)
+    } catch (error) {
+      console.error('Submission error:', error)
+    }
+  }
+
   return (
-    <div className="p-4 border rounded">
-      <h3>Relationship Status</h3>
-      <p className="text-lg font-bold">{statusText}</p>
-    </div>
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+      {/* Email Field */}
+      <div>
+        <label htmlFor="email" className="block text-sm font-medium">
+          {t('common:form.email', { defaultValue: 'Email Address' })}
+        </label>
+        <input
+          id="email"
+          type="email"
+          {...register('email')}
+          className="mt-1 block w-full rounded border p-2"
+        />
+        {errors.email && (
+          <p className="mt-1 text-sm text-red-600">{errors.email.message}</p>
+        )}
+      </div>
+
+      {/* Message Field */}
+      <div>
+        <label htmlFor="message" className="block text-sm font-medium">
+          {t('common:form.message', { defaultValue: 'Your Message' })}
+        </label>
+        <textarea
+          id="message"
+          rows={4}
+          {...register('message')}
+          className="mt-1 block w-full rounded border p-2"
+        />
+        {errors.message && (
+          <p className="mt-1 text-sm text-red-600">{errors.message.message}</p>
+        )}
+      </div>
+
+      {/* Submit Button */}
+      <button
+        type="submit"
+        disabled={isSubmitting}
+        className="w-full rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 disabled:opacity-50"
+      >
+        {isSubmitting
+          ? t('common:actions.submitting', { defaultValue: 'Sending...' })
+          : t('common:actions.submit', { defaultValue: 'Send Message' })}
+      </button>
+    </form>
   )
 }
 ```
 
-## Complex Notification Example
+## Advanced Usage with Registration Form
+```tsx
+import { useTranslation } from 'react-i18next'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { createRegistrationSchema, type RegistrationFormValues } from './schemas/registration'
 
-Scenario: "[Ahmet] and [3 people] liked your photo."
-```typescript
-/**
- * EXAMPLE 2: Complex Notification Message
- * Scenario: "[Ahmet] and [3 people] liked your photo."
- */
-export function NotificationMessage({
-  name,
-  otherCount,
-  gender
-}: {
-  name: string
-  otherCount: number
-  gender: Gender
-}) {
-  const { t } = useTranslation(['notifications'])
+export function RegistrationForm() {
+  const { t } = useTranslation(['validation', 'auth'])
 
-  const message = t('notifications:photo_like', {
-    count: otherCount, // Number of other people
-    context: gender,   // Gender of the main liker
-    name: name,
+  // Create schema with translations
+  const schema = createRegistrationSchema(t)
 
-    // Singular: Only Ahmet liked (count: 0 means +0 other people)
-    defaultValue: '{{name}} liked your photo.',
-    defaultValue_male: '{{name}} (he) liked your photo.',
-    defaultValue_female: '{{name}} (she) liked your photo.',
-
-    // Plural: Ahmet and +3 other people liked
-    defaultValue_other: '{{name}} and {{count}} others liked your photo.',
-    defaultValue_male_other: '{{name}} and {{count}} others liked his photo.',
-    defaultValue_female_other: '{{name}} and {{count}} others liked her photo.',
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm<RegistrationFormValues>({
+    resolver: zodResolver(schema),
+    defaultValues: {
+      username: '',
+      email: '',
+      password: '',
+      confirmPassword: '',
+      age: undefined,
+      terms: false,
+    },
   })
 
-  return <div className="text-sm text-gray-600">{message}</div>
+  const onSubmit = async (data: RegistrationFormValues) => {
+    try {
+      // API call
+      console.log('Registration data:', data)
+    } catch (error) {
+      console.error('Registration error:', error)
+    }
+  }
+
+  return (
+    <form onSubmit={handleSubmit(onSubmit)} className="mx-auto max-w-md space-y-6">
+      {/* Username */}
+      <div>
+        <label htmlFor="username" className="block text-sm font-medium">
+          {t('auth:form.username', { defaultValue: 'Username' })}
+        </label>
+        <input
+          id="username"
+          {...register('username')}
+          className="mt-1 block w-full rounded border p-2"
+        />
+        {errors.username && (
+          <p className="mt-1 text-sm text-red-600">{errors.username.message}</p>
+        )}
+      </div>
+
+      {/* Email */}
+      <div>
+        <label htmlFor="email" className="block text-sm font-medium">
+          {t('auth:form.email', { defaultValue: 'Email Address' })}
+        </label>
+        <input
+          id="email"
+          type="email"
+          {...register('email')}
+          className="mt-1 block w-full rounded border p-2"
+        />
+        {errors.email && (
+          <p className="mt-1 text-sm text-red-600">{errors.email.message}</p>
+        )}
+      </div>
+
+      {/* Password */}
+      <div>
+        <label htmlFor="password" className="block text-sm font-medium">
+          {t('auth:form.password', { defaultValue: 'Password' })}
+        </label>
+        <input
+          id="password"
+          type="password"
+          {...register('password')}
+          className="mt-1 block w-full rounded border p-2"
+        />
+        {errors.password && (
+          <p className="mt-1 text-sm text-red-600">{errors.password.message}</p>
+        )}
+      </div>
+
+      {/* Confirm Password */}
+      <div>
+        <label htmlFor="confirmPassword" className="block text-sm font-medium">
+          {t('auth:form.confirm_password', { defaultValue: 'Confirm Password' })}
+        </label>
+        <input
+          id="confirmPassword"
+          type="password"
+          {...register('confirmPassword')}
+          className="mt-1 block w-full rounded border p-2"
+        />
+        {errors.confirmPassword && (
+          <p className="mt-1 text-sm text-red-600">{errors.confirmPassword.message}</p>
+        )}
+      </div>
+
+      {/* Age */}
+      <div>
+        <label htmlFor="age" className="block text-sm font-medium">
+          {t('auth:form.age', { defaultValue: 'Age' })}
+        </label>
+        <input
+          id="age"
+          type="number"
+          {...register('age', { valueAsNumber: true })}
+          className="mt-1 block w-full rounded border p-2"
+        />
+        {errors.age && (
+          <p className="mt-1 text-sm text-red-600">{errors.age.message}</p>
+        )}
+      </div>
+
+      {/* Terms & Conditions */}
+      <div className="flex items-start">
+        <input
+          id="terms"
+          type="checkbox"
+          {...register('terms')}
+          className="mt-1 h-4 w-4"
+        />
+        <label htmlFor="terms" className="ml-2 text-sm">
+          {t('auth:form.terms_label', {
+            defaultValue: 'I agree to the Terms and Conditions',
+          })}
+        </label>
+      </div>
+      {errors.terms && (
+        <p className="text-sm text-red-600">{errors.terms.message}</p>
+      )}
+
+      {/* Submit */}
+      <button
+        type="submit"
+        disabled={isSubmitting}
+        className="w-full rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 disabled:opacity-50"
+      >
+        {isSubmitting
+          ? t('auth:actions.registering', { defaultValue: 'Creating Account...' })
+          : t('auth:actions.register', { defaultValue: 'Create Account' })}
+      </button>
+    </form>
+  )
 }
 ```
-
-## Resolution Logic
-
-i18next resolves translations in this order:
-
-1. `key_context_plural` → `relationship_male_other`
-2. `key_context` → `relationship_male`
-3. `key_plural` → `relationship_other`
-4. `key` → `relationship`
 
 ## Generated JSON Structure
 ```json
 {
-  "relationship": "Just a friend",
-  "relationship_other": "{{count}} friends",
-  "relationship_male": "He is a boyfriend",
-  "relationship_male_other": "{{count}} boyfriends",
-  "relationship_female": "She is a girlfriend",
-  "relationship_female_other": "{{count}} girlfriends",
-
-  "photo_like": "{{name}} liked your photo.",
-  "photo_like_male": "{{name}} (he) liked your photo.",
-  "photo_like_female": "{{name}} (she) liked your photo.",
-  "photo_like_other": "{{name}} and {{count}} others liked your photo.",
-  "photo_like_male_other": "{{name}} and {{count}} others liked his photo.",
-  "photo_like_female_other": "{{name}} and {{count}} others liked her photo."
+  "field_required": "This field is required.",
+  "email_invalid": "Please enter a valid email address.",
+  "message_min": "Message must be at least {{count}} characters.",
+  "message_max": "Message cannot exceed {{count}} characters.",
+  "username_min": "Username must be at least {{count}} characters.",
+  "username_max": "Username cannot exceed {{count}} characters.",
+  "username_format": "Username can only contain letters, numbers, and underscores.",
+  "password_min": "Password must be at least {{count}} characters.",
+  "password_uppercase": "Password must contain at least one uppercase letter.",
+  "password_lowercase": "Password must contain at least one lowercase letter.",
+  "password_number": "Password must contain at least one number.",
+  "password_mismatch": "Passwords do not match.",
+  "age_invalid": "Age must be a number.",
+  "age_min": "You must be at least {{count}} years old.",
+  "age_max": "Please enter a valid age.",
+  "terms_required": "You must accept the terms and conditions."
 }
 ```
 
 ## Key Points
 
-- ✅ Combines `count` and `context` parameters
-- ✅ Covers all combinations: neutral, male, female × singular, plural
-- ✅ Uses suffix pattern: `defaultValue_[context]_[plural]`
-- ✅ Interpolation works: `{{name}}`, `{{count}}`
-- 🎯 Tool automatically generates all suffixed keys in JSON
+- ✅ **Factory Pattern**: Schema wrapped in a function that accepts `t`
+- ✅ **No useMemo**: React Compiler handles optimization automatically
+- ✅ **Type Safety**: Use `z.infer<ReturnType<typeof createSchema>>` for form types
+- ✅ **Interpolation**: Use `{{count}}` in validation messages
+- ✅ **Complex Validation**: Supports regex, custom refine, cross-field validation
+- ✅ **Multiple Namespaces**: Load `['validation', 'common', 'auth']` as needed
+- ⚠️ **defaultValue Required**: Every `t()` call must have `defaultValue`
+
+## Common Zod Validations
+```typescript
+// String validations
+z.string()
+  .min(n, { message: '...' })
+  .max(n, { message: '...' })
+  .email({ message: '...' })
+  .url({ message: '...' })
+  .regex(/pattern/, { message: '...' })
+  .trim()
+  .toLowerCase()
+
+// Number validations
+z.number({ invalid_type_error: '...' })
+  .min(n, { message: '...' })
+  .max(n, { message: '...' })
+  .int({ message: '...' })
+  .positive({ message: '...' })
+
+// Boolean validation
+z.boolean()
+  .refine(val => val === true, { message: '...' })
+
+// Custom validation
+z.string()
+  .refine((val) => customCheck(val), {
+    message: '...'
+  })
+
+// Cross-field validation
+.refine((data) => data.field1 === data.field2, {
+  message: '...',
+  path: ['field2']
+})
+```
+
+## File Structure Recommendation
+```
+src/
+├── lib/
+│   └── schemas/
+│       ├── contact.ts          # createContactSchema
+│       ├── registration.ts     # createRegistrationSchema
+│       └── profile.ts          # createProfileSchema
+└── components/
+    └── forms/
+        ├── ContactForm.tsx
+        ├── RegistrationForm.tsx
+        └── ProfileForm.tsx
+```
