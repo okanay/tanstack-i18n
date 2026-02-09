@@ -8,6 +8,7 @@ import { DefaultNotFound } from './features/systems/default-not-found'
 
 export const getRouter = () => {
   const rqContext = TanstackQuery.getContext()
+
   const router = createRouter({
     context: {
       ...rqContext,

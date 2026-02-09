@@ -1,6 +1,6 @@
 import { unlink } from 'node:fs/promises'
 import { CONFIG } from './config'
-import { scanAllFiles } from './extract' // AST Scanner
+import { scanAllFiles } from './extract'
 import { loadJsonFile, saveJsonFile, getNamespaces, updateIndexFile, loadHashes, saveHashes } from './utils'
 
 // ============================================================================
@@ -9,19 +9,30 @@ import { loadJsonFile, saveJsonFile, getNamespaces, updateIndexFile, loadHashes,
 
 /**
  * Flattens all keys in a JSON object into "namespace:key.path" format.
+ * Used to compare existing keys in JSON against the keys found in code.
+ * * @param obj - The JSON object from the translation file.
+ * @param namespace - The current namespace.
+ * @param validKeysSet - Set of keys known to exist in the code (to prevent flattening complex values).
+ * @param prefix - Current path prefix (recursion).
  */
-function getFlattenedKeys(obj: Record<string, unknown>, namespace: string, prefix = ''): string[] {
+function getFlattenedKeys(obj: Record<string, unknown>, namespace: string, validKeysSet: Set<string>, prefix = ''): string[] {
   const keys: string[] = []
 
   for (const [key, value] of Object.entries(obj)) {
     const currentPath = prefix ? `${prefix}.${key}` : key
+    const fullKey = `${namespace}:${currentPath}`
 
-    // If the value is an object and not an array, recurse deeper
+    // If this path is a known extracted key, treat it as a leaf.
+    if (validKeysSet.has(fullKey)) {
+      keys.push(fullKey)
+      continue
+    }
+
+    // If the value is an object and not an array, recurse deeper.
     if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
-      keys.push(...getFlattenedKeys(value as Record<string, unknown>, namespace, currentPath))
+      keys.push(...getFlattenedKeys(value as Record<string, unknown>, namespace, validKeysSet, currentPath))
     } else {
-      // If it's a string, array, or primitive value, it's an endpoint (Key)
-      keys.push(`${namespace}:${currentPath}`)
+      keys.push(fullKey)
     }
   }
 
@@ -30,7 +41,9 @@ function getFlattenedKeys(obj: Record<string, unknown>, namespace: string, prefi
 
 /**
  * Deletes a keyPath from a nested object.
- * If a parent object becomes empty, it also cleans it up (Recursively).
+ * Recursively cleans up empty parent objects.
+ * * @param obj - The object to modify.
+ * @param keyPath - The path of the key to remove (e.g. "section.title").
  */
 function removeNestedKey(obj: Record<string, unknown>, keyPath: string): Record<string, unknown> {
   const keys = keyPath.split('.')
@@ -45,7 +58,6 @@ function removeNestedKey(obj: Record<string, unknown>, keyPath: string): Record<
   const [currentKey, ...rest] = keys
   const result: Record<string, unknown> = { ...obj }
 
-  // If there's a child object, go into it
   if (currentKey in result && typeof result[currentKey] === 'object' && result[currentKey] !== null) {
     const childObj = result[currentKey] as Record<string, unknown>
     const updatedChild = removeNestedKey(childObj, rest.join('.'))
@@ -65,8 +77,18 @@ function removeNestedKey(obj: Record<string, unknown>, keyPath: string): Record<
 // MAIN FUNCTION
 // ============================================================================
 
+/**
+ * Scans the codebase for unused translation keys and removes them from JSON files.
+ * Respects 'cleanUnusedKeys' and 'removeEmptyFiles' settings in config.
+ */
 export async function clean() {
   console.log('i18n: Scanning source code for used keys...')
+
+  // Guard: If cleanup is disabled in config, exit early.
+  if (!CONFIG.behavior.cleanUnusedKeys) {
+    console.log('⚠️  Cleanup is disabled in config (cleanUnusedKeys: false). Skipping.')
+    return
+  }
 
   // 1. FIND THE ACTUAL KEYS IN THE CODE (Source of Truth)
   const validKeysMap = await scanAllFiles()
@@ -84,7 +106,7 @@ export async function clean() {
       let json = await loadJsonFile(filePath)
 
       // Find all existing keys in the file
-      const fileKeys = getFlattenedKeys(json, ns)
+      const fileKeys = getFlattenedKeys(json, ns, validKeysSet)
 
       // Filter keys that are NOT in the code
       const keysToRemove = fileKeys.filter((key) => !validKeysSet.has(key))
@@ -94,7 +116,6 @@ export async function clean() {
 
         let modified = false
         for (const fullKey of keysToRemove) {
-          // fullKey format: "namespace:key.path" -> only "key.path" is needed
           const keyPath = fullKey.split(':').slice(1).join(':')
 
           json = removeNestedKey(json, keyPath)
@@ -104,11 +125,18 @@ export async function clean() {
         }
 
         if (modified) {
-          // If the file became completely empty, delete it
+          // If the file became completely empty
           if (Object.keys(json).length === 0) {
-            await unlink(filePath)
-            console.log(`    (File is empty, deleted)`)
-            totalDeletedFiles++
+            // Only delete the file if config allows it
+            if (CONFIG.behavior.removeEmptyFiles) {
+              await unlink(filePath)
+              console.log(`    (File is empty, deleted)`)
+              totalDeletedFiles++
+            } else {
+              // Otherwise, save as empty object
+              await saveJsonFile(filePath, {})
+              console.log(`    (File is empty, kept as {})`)
+            }
           } else {
             await saveJsonFile(filePath, json)
           }
@@ -121,7 +149,7 @@ export async function clean() {
     await updateIndexFile(lang, currentNamespaces)
   }
 
-  // 3. CLEAN THE HASH FILE (If extract didn't run, the hash might be dirty)
+  // 3. CLEAN THE HASH FILE
   const hashes = await loadHashes()
   const storedHashKeys = Object.keys(hashes)
   let hashesModified = false

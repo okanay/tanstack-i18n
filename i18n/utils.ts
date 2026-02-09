@@ -22,6 +22,12 @@ export interface HashEntry {
 // KEY PARSING & SKELETON
 // ============================================================================
 
+/**
+ * Parses a raw key string into a namespace and key path.
+ * Example: "home:title" -> { namespace: "home", keyPath: "title" }
+ * Example: "welcome" -> { namespace: "translation", keyPath: "welcome" }
+ * * @param raw - The raw key string found in the source code.
+ */
 export function parseKey(raw: string): { namespace: string; keyPath: string } {
   const parts = raw.split(':')
   if (parts.length >= 2) {
@@ -34,9 +40,11 @@ export function parseKey(raw: string): { namespace: string; keyPath: string } {
 }
 
 /**
- * Generates a skeleton (empty structure) from an English text.
- * Preserves HTML tags (<br>, <Link>...) and variables ({{name}}).
- * Cleans the text content within.
+ * Generates a "skeleton" structure from the default value.
+ * Preserves the structure (arrays, objects) and interpolation variables ({{name}}),
+ * but removes the actual text content to prepare it for translation.
+ * * @param value - The source translation value.
+ * @returns A skeletal version of the value.
  */
 export function generateSkeleton(value: TranslationValue): TranslationValue {
   if (Array.isArray(value)) {
@@ -57,7 +65,6 @@ export function generateSkeleton(value: TranslationValue): TranslationValue {
     const interpolations = value.match(interpolationRegex) || []
 
     // 2. Preserve Component/HTML tags: <Trans>... or <br/>
-    // It only takes the tag structure, discards the content.
     const tagRegex = /<\/?[^>]+(>|$)/g
     const tags = value.match(tagRegex) || []
 
@@ -73,38 +80,54 @@ export function generateSkeleton(value: TranslationValue): TranslationValue {
 // OBJECT MANIPULATION (Merge & Hash)
 // ============================================================================
 
+/**
+ * Deeply merges a source translation value (skeleton/code) into a target value (existing JSON).
+ * Respects the 'syncTranslationsStrictly' configuration.
+ * * @param target - The existing value in the translation file (e.g., TR).
+ * @param source - The new value extracted from code (Source of Truth).
+ */
 export function mergeDeep(target: TranslationValue | undefined, source: TranslationValue): TranslationValue {
+  // 1. If target doesn't exist, use the source.
   if (target === undefined || target === null) {
     return source
   }
 
-  // If there's a type mismatch (e.g., was string, now array), take the source.
+  // 2. If types mismatch (e.g., string vs array), overwrite with source.
   if (typeof target !== typeof source) {
     return source
   }
 
+  // 3. Array Merge: Map based on source length.
   if (Array.isArray(source) && Array.isArray(target)) {
-    // In arrays, merge based on the source length.
     return source.map((sourceItem, index) => {
       return mergeDeep(target[index], sourceItem)
     })
   }
 
+  // 4. Object Merge: The core logic for Strict vs Soft sync.
   if (typeof source === 'object' && source !== null && typeof target === 'object' && target !== null) {
-    const result: Record<string, TranslationValue> = {
-      ...(target as Record<string, any>),
-    }
+    // STRICT MODE: Start with empty object. Only keys present in 'source' will be kept.
+    // SOFT MODE: Start with a copy of 'target'. Old keys in 'target' are preserved.
+    const result: Record<string, TranslationValue> = CONFIG.behavior.syncTranslationsStrictly ? {} : { ...(target as Record<string, any>) }
 
-    for (const [key, sourceValue] of Object.entries(source)) {
-      result[key] = mergeDeep(result[key] as TranslationValue, sourceValue)
+    for (const key of Object.keys(source)) {
+      const sourceValue = (source as Record<string, TranslationValue>)[key]
+      const targetValue = (target as Record<string, TranslationValue>)[key]
+
+      result[key] = mergeDeep(targetValue, sourceValue)
     }
 
     return result
   }
 
+  // For primitives (strings), keep the target (existing translation).
   return target
 }
 
+/**
+ * Generates a quick hash of the value to detect changes.
+ * Used to avoid unnecessary file writes if content hasn't changed.
+ */
 export function quickHash(val: TranslationValue): string {
   const str = typeof val === 'string' ? val : JSON.stringify(val)
   return Bun.hash(str).toString(16).slice(0, 8)
@@ -114,6 +137,9 @@ export function quickHash(val: TranslationValue): string {
 // FILE SYSTEM
 // ============================================================================
 
+/**
+ * Loads a JSON file safely. Returns an empty object if file is missing/corrupt.
+ */
 export async function loadJsonFile(path: string): Promise<Record<string, unknown>> {
   const file = Bun.file(path)
   if (await file.exists()) {
@@ -126,6 +152,9 @@ export async function loadJsonFile(path: string): Promise<Record<string, unknown
   return {}
 }
 
+/**
+ * Saves a JSON file with sorted keys for consistent diffs.
+ */
 export async function saveJsonFile(path: string, data: unknown): Promise<void> {
   const sortedData = sortDeep(data)
   await Bun.write(path, JSON.stringify(sortedData, null, 2) + '\n')
@@ -159,6 +188,9 @@ export async function saveHashes(hashes: Record<string, HashEntry>): Promise<voi
   await saveJsonFile(CONFIG.hashFile, hashes)
 }
 
+/**
+ * Scans the messages directory to find all existing namespaces.
+ */
 export async function getNamespaces(lang: Language): Promise<string[]> {
   const glob = new Bun.Glob('*.json')
   const namespaces: string[] = []
@@ -168,6 +200,9 @@ export async function getNamespaces(lang: Language): Promise<string[]> {
   return namespaces
 }
 
+/**
+ * Ensures a namespace file exists; creates it if missing.
+ */
 export async function ensureNamespaceFile(lang: Language, namespace: string): Promise<void> {
   const filePath = `${CONFIG.messagesDir}/${lang}/${namespace}.json`
   const file = Bun.file(filePath)
@@ -176,6 +211,9 @@ export async function ensureNamespaceFile(lang: Language, namespace: string): Pr
   }
 }
 
+/**
+ * Updates the `index.ts` file that exports all namespaces for a language.
+ */
 export async function updateIndexFile(lang: Language, namespaces: string[]): Promise<void> {
   const sorted = [...namespaces].sort()
   const imports = sorted.map((ns) => `import ${ns} from "./${ns}.json";`).join('\n')
