@@ -1,89 +1,67 @@
-# Pluralization and Context Examples
+# Pluralization & Context Examples
 
-This example demonstrates how to use pluralization, context, and the `<Trans>` component.
+This example demonstrates how to use pluralization and context together.
 
-## Code
+## Basic Example
 ```tsx
-import { useTranslation, Trans } from 'react-i18next'
+import { useTranslation } from 'react-i18next'
 
-export function UserDashboard({
-  userCount,
-  userRole
-}: {
-  userCount: number
-  userRole: 'admin' | 'user' | 'guest'
-}) {
-  const { t } = useTranslation(['dashboard'])
+type Gender = 'male' | 'female' | 'non_binary'
 
-  return (
-    <div className="p-4">
-      {/* 1. PLURALIZATION (Pluralization) */}
-      <h1>
-        {t('stats.active_users', {
-          count: userCount,
-          defaultValue: 'One active user', // count === 1
-          defaultValue_other: '{{count}} active users', // count !== 1
-        })}
-      </h1>
+interface RelationshipProps {
+  count: number
+  gender: Gender
+}
 
-      {/* 2. CONTEXT (Contextual Text) */}
-      <p>
-        {t('role_description', {
-          context: userRole,
-          defaultValue: 'Welcome, guest!', // context === 'guest' or undefined
-          defaultValue_admin: 'Welcome, Administrator. You have full access.',
-          defaultValue_user: 'Welcome back, User.',
-        })}
-      </p>
+function SocialStatus({ count, gender }: RelationshipProps) {
+  const { t } = useTranslation(['social'])
 
-      {/* 3. TRANS COMPONENT (Links, Bold, HTML) */}
-      <div className="text-sm text-gray-500">
-        <Trans
-          i18nKey="dashboard:legal.terms_agreement"
-          defaults="By continuing, you agree to our <terms>Terms of Service</terms> and <privacy>Privacy Policy</privacy>."
-          components={{
-            terms: <a href="/terms" className="underline text-blue-600" />,
-            privacy: <a href="/privacy" className="underline text-blue-600" />,
-          }}
-        />
-      </div>
-    </div>
-  )
+  const statusText = t('social:relationship', {
+    count,
+    context: gender, // 'male', 'female', 'non_binary'
+
+    // 1. Fallback / Neutral
+    defaultValue: 'Just a friend',
+    defaultValue_other: '{{count}} friends',
+
+    // 2. Male Context
+    defaultValue_male: 'He is a boyfriend',
+    defaultValue_male_other: '{{count}} boyfriends',
+
+    // 3. Female Context
+    defaultValue_female: 'She is a girlfriend',
+    defaultValue_female_other: '{{count}} girlfriends',
+  })
+
+  return <p className="text-lg font-bold">{statusText}</p>
 }
 ```
 
-## Key Concepts
-
-### 1. Pluralization
-- Use `count` parameter
-- `defaultValue` for singular (count === 1)
-- `defaultValue_other` for plural (count !== 1)
-- `{{count}}` interpolates the number
-
-### 2. Context
-- Use `context` parameter
-- `defaultValue` for fallback/default context
-- `defaultValue_[context]` for specific contexts
-- Common contexts: `male`, `female`, `admin`, `user`, etc.
-
-### 3. Trans Component
-- Use for text with HTML elements or React components
-- `defaults` prop contains the text template
-- `components` prop maps placeholders to actual components
-- Maintains proper translation structure
-
-## Generated JSON Example
+## Generated JSON
 ```json
 {
-  "stats": {
-    "active_users": "One active user",
-    "active_users_other": "{{count}} active users"
-  },
-  "role_description": "Welcome, guest!",
-  "role_description_admin": "Welcome, Administrator. You have full access.",
-  "role_description_user": "Welcome back, User.",
-  "legal": {
-    "terms_agreement": "By continuing, you agree to our <terms>Terms of Service</terms> and <privacy>Privacy Policy</privacy>."
-  }
+  "relationship": "Just a friend",
+  "relationship_other": "{{count}} friends",
+  "relationship_male": "He is a boyfriend",
+  "relationship_male_other": "{{count}} boyfriends",
+  "relationship_female": "She is a girlfriend",
+  "relationship_female_other": "{{count}} girlfriends"
 }
 ```
+
+## Resolution Logic
+
+i18next resolves translations in this order:
+
+1. `key_context_plural` → `relationship_male_other`
+2. `key_context` → `relationship_male`
+3. `key_plural` → `relationship_other`
+4. `key` → `relationship`
+
+## Key Points
+
+- ✅ Use `count` parameter for pluralization
+- ✅ Use `context` parameter for variations (gender, role, etc.)
+- ✅ Combine both with suffix pattern: `defaultValue_[context]_[plural]`
+- ✅ `{{count}}` interpolates the number
+- 🎯 Tool automatically generates all suffixed keys in JSON
