@@ -19,7 +19,7 @@ import type { TFunction } from 'i18next'
  export const createContactSchema = (t: TFunction<'validation'>) => {
    return z.object({
      email: z.email({
-       message: t('validation:email_invalid', {
+       message: t('email_invalid', {
          defaultValue: 'Please enter a valid email address.',
        }),
      }),
@@ -27,13 +27,13 @@ import type { TFunction } from 'i18next'
      message: z
        .string()
        .min(10, {
-         message: t('validation:message_min', {
+         message: t('message_min', {
            defaultValue: 'Message must be at least {{count}} characters.',
            count: 10,
          }),
        })
        .max(500, {
-         message: t('validation:message_max', {
+         message: t('message_max', {
            defaultValue: 'Message cannot exceed {{count}} characters.',
            count: 500,
          }),
@@ -119,22 +119,9 @@ function RouteComponent() {
 ## Example `messages/en/validation.json` Translation File
 ```json
 {
-  "field_required": "This field is required.",
   "email_invalid": "Please enter a valid email address.",
   "message_min": "Message must be at least {{count}} characters.",
   "message_max": "Message cannot exceed {{count}} characters.",
-  "username_min": "Username must be at least {{count}} characters.",
-  "username_max": "Username cannot exceed {{count}} characters.",
-  "username_format": "Username can only contain letters, numbers, and underscores.",
-  "password_min": "Password must be at least {{count}} characters.",
-  "password_uppercase": "Password must contain at least one uppercase letter.",
-  "password_lowercase": "Password must contain at least one lowercase letter.",
-  "password_number": "Password must contain at least one number.",
-  "password_mismatch": "Passwords do not match.",
-  "age_invalid": "Age must be a number.",
-  "age_min": "You must be at least {{count}} years old.",
-  "age_max": "Please enter a valid age.",
-  "terms_required": "You must accept the terms and conditions."
 }
 ```
 

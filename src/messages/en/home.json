@@ -1,5 +1,4 @@
 {
-  "accept_terms": "I accept the <termsLink>Terms of Service</termsLink> and <privacyLink>Privacy Policy</privacyLink>.",
   "greeting": "Hello {{username}}",
   "links": {
     "about": "Go To About Page",

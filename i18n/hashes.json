@@ -23,10 +23,6 @@
     "defaultValue": "Contact {{locale}}",
     "hash": "fce03e1e"
   },
-  "home:accept_terms": {
-    "defaultValue": "I accept the <termsLink>Terms of Service</termsLink> and <privacyLink>Privacy Policy</privacyLink>.",
-    "hash": "6488503a"
-  },
   "home:greeting": {
     "defaultValue": "Hello {{username}}",
     "hash": "45f208d5"

@@ -42,7 +42,6 @@ export const CONFIG = {
     removeEmptyFiles: true,
 
     /**
-     * If true, target languages (e.g., TR) will be strictly synced with the source (EN).
      * Keys present in TR but missing in EN (source) will be removed.
      * * If false (Soft Mode), existing keys in TR are kept even if removed from EN/Code.
      */

@@ -17,7 +17,7 @@ interface LanguageProviderProps {
 
 export const LanguageProvider = ({ children, initialLanguageValue, initialResources }: LanguageProviderProps) => {
   const i18n = initI18n(initialLanguageValue, initialResources)
-  const language = findLanguage(initialLanguageValue)
+  const language = SUPPORTED_LANGUAGES.find((lang) => lang.value === initialLanguageValue) ?? DEFAULT_LANGUAGE
 
   const setLanguage = (newLang: LanguageValue) => {
     if (newLang === initialLanguageValue) return
@@ -43,10 +43,6 @@ export const useLanguage = (): LanguageContextValue => {
   }
 
   return context
-}
-
-const findLanguage = (value: LanguageValue): Language => {
-  return SUPPORTED_LANGUAGES.find((lang) => lang.value === value) ?? DEFAULT_LANGUAGE
 }
 
 const LanguageContext = createContext<LanguageContextValue | null>(null)

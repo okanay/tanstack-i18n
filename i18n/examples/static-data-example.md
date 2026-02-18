@@ -44,7 +44,7 @@ export interface SiteConfig {
 ## Example 1: Simple Array (Navigation)
 ```typescript
 export const getMainNavigation = (t: TFunction<'navigation'>): NavItem[] => {
-  return t('navigation:main_menu', {
+  return t('main_menu', {
     returnObjects: true, // ⚠️ REQUIRED
     defaultValue: [
       { label: 'Home', href: '/', icon: 'home' },
@@ -93,7 +93,7 @@ function Header() {
 const CURRENCY = 'USD'
 
 export const getPricingPlans = (t: TFunction<'pricing'>): PricingPlan[] => {
-  return t('pricing:plans', {
+  return t('plans', {
     returnObjects: true,
     defaultValue: [
       {
@@ -151,7 +151,7 @@ function PricingSection() {
 const SUPPORT_EMAIL = 'support@example.com'
 
 export const getSiteConfig = (t: TFunction<'common'>): SiteConfig => {
-  return t('common:site_config', {
+  return t('site_config', {
     returnObjects: true,
     defaultValue: {
       name: 'My Awesome App',
@@ -206,7 +206,7 @@ function Footer() {
 ## Example 4: FAQ List
 ```typescript
 export const getFAQs = (t: TFunction<'support'>): FAQItem[] => {
-  return t('support:faqs', {
+  return t('faqs', {
     returnObjects: true,
     defaultValue: [
       {

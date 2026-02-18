@@ -1,5 +1,4 @@
 {
-  "accept_terms": "<termsLink>Hizmet Şartları</termsLink> ve <privacyLink>Gizlilik Politikası</ndağını</privacyLink> kabul ediyorum.",
   "greeting": "Merhaba {{username}}",
   "links": {
     "about": "Hakkımızda Sayfasına Git",

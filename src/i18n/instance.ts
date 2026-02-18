@@ -3,22 +3,6 @@ import { initReactI18next } from 'react-i18next'
 import { DEFAULT_LANGUAGE, SUPPORTED_LANGUAGES } from '@/i18n/config'
 
 export const initI18n = (lang: string, resources: Record<string, any>) => {
-  if (i18n.isInitialized) {
-    if (i18n.language === lang) {
-      Object.keys(resources).forEach((ns) => {
-        if (!i18n.hasResourceBundle(lang, ns)) {
-          i18n.addResourceBundle(lang, ns, resources[ns], true, true)
-        }
-      })
-    } else {
-      i18n.changeLanguage(lang)
-      Object.keys(resources).forEach((ns) => {
-        i18n.addResourceBundle(lang, ns, resources[ns], true, true)
-      })
-    }
-    return i18n
-  }
-
   i18n.use(initReactI18next).init({
     lng: lang,
     fallbackLng: DEFAULT_LANGUAGE.value,
@@ -43,5 +27,3 @@ export const initI18n = (lang: string, resources: Record<string, any>) => {
 
   return i18n
 }
-
-export default i18n
