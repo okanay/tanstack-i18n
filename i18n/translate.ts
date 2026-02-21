@@ -2,7 +2,6 @@ import { SUPPORTED_LANGUAGES } from '@/i18n/config'
 import { CONFIG, type Language } from './config'
 import { generateSkeleton, loadHashes, loadJsonFile, saveJsonFile, type TranslationValue } from './utils'
 
-const BATCH_SIZE = 50
 
 // ============================================================================
 // TYPES
@@ -94,8 +93,8 @@ async function collectUntranslated(lang: Language): Promise<UntranslatedItem[]> 
 // ============================================================================
 
 async function callAI(batch: TranslationBatch, langLabel: string): Promise<TranslationBatch> {
-  const apiKey = process.env.ANTHROPIC_API_KEY
-  if (!apiKey) throw new Error('ANTHROPIC_API_KEY is not set')
+  const apiKey = CONFIG.ai.apiKey || process.env.ANTHROPIC_API_KEY
+  if (!apiKey) throw new Error('No API key: set ai.apiKey in i18n/config.ts or ANTHROPIC_API_KEY env variable')
 
   const res = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
@@ -105,7 +104,7 @@ async function callAI(batch: TranslationBatch, langLabel: string): Promise<Trans
       'anthropic-version': '2023-06-01',
     },
     body: JSON.stringify({
-      model: 'claude-haiku-4-5-20251001',
+      model: CONFIG.ai.model,
       max_tokens: 4096,
       system: `Translate from English to ${langLabel}. Return ONLY a JSON array with exactly ${batch.strings.length} elements. Preserve {{placeholders}} and <tags> as-is.`,
       messages: [{ role: 'user', content: JSON.stringify(batch.strings) }],
@@ -152,7 +151,7 @@ async function applyTranslations(lang: Language, responses: TranslationBatch[]):
   // Fill translated array — null where a batch failed
   const translated: (string | null)[] = Array(total).fill(null)
   for (const { batchId, strings } of responses) {
-    const start = batchId * BATCH_SIZE
+    const start = batchId * CONFIG.ai.batchSize
     strings.forEach((s, i) => { if (start + i < total) translated[start + i] = s })
   }
 
@@ -220,10 +219,10 @@ export async function translate(targetLangArg?: string) {
     }
 
     const strings = items.flatMap((item) => flattenStrings(item.defaultValue))
-    const batchCount = Math.ceil(strings.length / BATCH_SIZE)
+    const batchCount = Math.ceil(strings.length / CONFIG.ai.batchSize)
 
     for (let i = 0; i < batchCount; i++) {
-      batches.push({ batchId: i, language: lang, strings: strings.slice(i * BATCH_SIZE, (i + 1) * BATCH_SIZE) })
+      batches.push({ batchId: i, language: lang, strings: strings.slice(i * CONFIG.ai.batchSize, (i + 1) * CONFIG.ai.batchSize) })
     }
 
     console.log(`  ${lang} (${getLabel(lang)}): ${strings.length} strings → ${batchCount} batch(es)`)

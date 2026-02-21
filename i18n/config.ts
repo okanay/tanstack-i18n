@@ -56,6 +56,16 @@ export const CONFIG = {
     fillEmptyWithSource: true,
   },
 
+  // AI Translation
+  ai: {
+    /** Anthropic API key — falls back to ANTHROPIC_API_KEY env variable if left empty */
+    apiKey: '',
+    /** Model to use for translation */
+    model: 'claude-haiku-4-5-20251001',
+    /** Maximum number of strings per AI call */
+    batchSize: 50,
+  },
+
   // Output
   /** Enable verbose logging for debugging purposes */
   verbose: false,
