@@ -35,7 +35,7 @@ export function i18nPlugin(): Plugin {
     name: 'vite-plugin-i18n',
     configureServer(server) {
       // Log initialization
-      server.config.logger.info("\n  🌐 i18n Plugin Active: Press 't' to extract, 's' for status, 'x' to clean.\n", {
+      server.config.logger.info("\n  🌐 i18n Plugin Active: Press 't' to extract, 's' for status, 'x' to clean, 'a' to AI translate.\n", {
         timestamp: true,
         clear: false,
       })
@@ -85,6 +85,22 @@ export function i18nPlugin(): Plugin {
                 server.config.logger.info('Cleanup complete.', { timestamp: true })
               } catch (error) {
                 server.config.logger.error(`Clean failed: ${error}`)
+              }
+            },
+          },
+          {
+            key: 'a',
+            description: 'AI translate missing keys',
+            action: async () => {
+              server.config.logger.info('Running AI translation...', {
+                timestamp: true,
+              })
+              try {
+                // Runs: bun run i18n/index.ts translate
+                await runScript('bun', ['run', 'i18n/index.ts', 'translate'])
+                server.config.logger.info('AI translation complete.', { timestamp: true })
+              } catch (error) {
+                server.config.logger.error(`AI translation failed: ${error}`)
               }
             },
           },
