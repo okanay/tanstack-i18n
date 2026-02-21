@@ -1,6 +1,7 @@
 import { extract } from './extract'
 import { clean } from './clean'
 import { status } from './status'
+import { translate } from './translate'
 
 /**
  * CLI Entry Point for the i18n tool.
@@ -22,6 +23,11 @@ switch (command) {
 
   case 'status':
     await status()
+    break
+
+  case 'translate':
+    console.log('Starting AI translation...')
+    await translate(process.argv[3])
     break
 
   case 'help':
@@ -48,10 +54,11 @@ function printHelp() {
 Usage: bun i18n [command]
 
 Commands:
-  extract   Scans code, extracts keys, and updates JSON files.
-  clean     Removes unused keys from JSON files (Config dependent).
-  status    Shows translation progress and missing keys.
-  help      Shows this help message.
+  extract            Scans code, extracts keys, and updates JSON files.
+  clean              Removes unused keys from JSON files (Config dependent).
+  status             Shows translation progress and missing keys.
+  translate [lang]   AI-fills untranslated keys. Optionally pass a language (e.g. tr, fr).
+  help               Shows this help message.
 
 Configuration:
   Check 'i18n/config.ts' to adjust strict/soft mode and paths.
